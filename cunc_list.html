@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Список учеников</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  <style>
+    :root {
+      --color-bg: rgba(0, 0, 0, 0.5);
+      --color-bg-solid: #000;
+      --color-fg: #fff;
+      --color-green: rgb(0, 255, 166);
+      --color-red: #f00;
+      --color-border: rgba(255, 255, 255, 0.1);
+      --color-hover: rgba(255, 255, 255, 0.1);
+      --color-th-bg: rgba(0, 0, 0, 0.2);
+      --color-placeholder: rgba(255, 255, 255, 0.371);
+      --color-shadow: rgba(0, 0, 0, 0.35);
+    }
+
+    body {
+      font-family: 'Consolas', 'Courier New', monospace;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      /* background: url('https://picsum.photos/1920/1080') no-repeat center/cover; */
+      background: url("file:///C:\\Users\\User\\Pictures\\ilike it\\Slide 16_9 - 1.png") no-repeat center/cover;
+
+      color: var(--color-fg);
+      position: relative;
+      overflow: hidden;
+
+      user-select: none;
+    }
+
+
+    .cmd-window {
+      position: absolute;
+      background-color: #000;
+      color: #ffffff;
+      border-radius: 5px;
+      overflow-y: scroll;
+      font-family: 'Consolas', 'Courier New', monospace;
+      box-shadow: 0 0 30px var(--color-shadow);
+    }
+
+    /* Шапка окна */
+    .cmd-header {
+      background-color: #ffffff;
+      /* типичный синий заголовок Windows */
+      color: rgb(0, 0, 0);
+      padding: 3px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      cursor:default;
+    }
+
+    .cmd-header:active {
+      cursor: pointer;
+    }
+
+    .cmd-buttons span {
+      margin-left: 5px;
+      cursor: pointer;
+    }
+
+    /* Тело CMD */
+    .cmd-body {
+      background-color: #000;
+      padding: 15px;
+      position: relative;
+      overflow-y: auto;
+    }
+
+
+
+    .main {
+      position: fixed;
+      left: 20px;
+      width: auto;
+      overflow-y: auto;
+      max-height: fit-content;
+    }
+
+    h2,
+    h3 {
+      font-size: 16px;
+      color: var(--color-fg);
+      margin: 0 0 10px;
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 6px;
+      font-size: 12px;
+      color: var(--color-fg);
+      border: none;
+    }
+
+    th {
+      background: var(--color-th-bg);
+      border-radius: 6px;
+    }
+
+    tr {
+      transition: background 0.2s;
+    }
+
+    tr:hover {
+      background: var(--color-hover);
+    }
+
+    td span {
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    td.present {
+      color: var(--color-green);
+    }
+
+    td.absent {
+      color: var(--color-red);
+    }
+
+    .controls {
+      margin-top: 10px;
+      display: flex;
+      gap: 5px;
+    }
+
+    input[type="text"],
+    input[type="url"] {
+      flex: 1;
+      padding: 6px;
+      border: none;
+      border-radius: 8px;
+      background: var(--color-bg);
+      color: var(--color-fg);
+      font-size: 12px;
+    }
+
+    input[type="text"]::placeholder,
+    input[type="url"]::placeholder {
+      color: var(--color-placeholder);
+    }
+
+    button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 8px;
+      background: var(--color-bg);
+      color: var(--color-fg);
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: var(--color-hover);
+    }
+
+    .qr-box {
+      position: fixed;
+      top: 30vh;
+      right: 20px;
+      width: fit-content;
+      ;
+      height: fit-content;
+      max-width: 15vw;
+      min-width: 120px;
+    }
+
+    #qrcode {
+      background: var(--color-fg);
+      padding: 5px;
+      width: calc(100% - 10px);
+      height: auto;
+      cursor: pointer;
+    }
+
+    #qrcode:active {
+      transform: scale(0.98);
+    }
+
+    #qrtext {
+      font-size: 10px;
+      color: var(--color-fg);
+      margin: 8px 0;
+      word-wrap: break-word;
+    }
+
+    .settings-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      color: var(--color-fg);
+      mix-blend-mode: difference;
+      opacity: 0.5;
+    }
+
+    .settings-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--color-bg);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 30px var(--color-shadow);
+      border: 1px solid var(--color-border);
+      z-index: 1000;
+      width: 300px;
+    }
+
+    .settings-popup.active {
+      display: block;
+    }
+
+    .blur {
+      filter: blur(5px);
+      pointer-events: none;
+    }
+
+    .days {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .days label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 12px;
+      color: var(--color-fg);
+    }
+
+    .days input {
+      width: 50px;
+      padding: 4px;
+      border: none;
+      border-radius: 6px;
+      background: var(--color-bg);
+      color: var(--color-fg);
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .options label {
+      display: block;
+      font-size: 12px;
+      color: var(--color-fg);
+      margin-bottom: 10px;
+    }
+
+    input[type="checkbox"] {
+      accent-color: #07f;
+    }
+
+    .close-settings {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--color-fg);
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .context-menu {
+      position: absolute;
+      background: var(--color-hover);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      box-shadow: 0 0 30px var(--color-shadow);
+      z-index: 2000;
+      padding: 5px 0;
+    }
+
+    .context-menu div {
+      padding: 8px 12px;
+      color: var(--color-fg);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .context-menu div:hover {
+      background: var(--color-bg);
+    }
+
+    .clock {
+      color: white;
+      font-size: 36px;
+      height: fit-content;
+      width: fit-content;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(90deg, var(--color-fg), var(--color-fg));
+      text-shadow: 0 0 10px var(--color-fg), 0 0 20px var(--color-fg);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="cmd-window clock">
+    <div class="cmd-header">
+      <span>>_ Time++</span>
+      <div class="cmd-buttons">
+        <span class="btn">–</span>
+        <span class="btn">□</span>
+        <span class="btn">×</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <div id="clock"></div>
+
+    </div>
+  </div>
+  <div class="main cmd-window">
+    <div class="cmd-header">
+      <span>>_ Students</span>
+      <div class="cmd-buttons">
+        <span class="btn">–</span>
+        <span class="btn">□</span>
+        <span class="btn">×</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <table id="studentsTable">
+        <thead>
+          <tr></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="controls">
+        <input type="text" id="newStudent" placeholder="Фамилия Имя" onkeydown="if(event.key==='Enter'){addStudent();}">
+      </div>
+    </div>
+  </div>
+
+  <div class="cmd-window qr-box">
+    <div class="cmd-header">
+      <span>>_ Meals</span>
+      <div class="cmd-buttons">
+        <span class="btn">–</span>
+        <span class="btn">□</span>
+        <span class="btn">×</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <canvas id="qrcode" onclick="copyText()"></canvas>
+      <p id="qrtext"></p>
+
+    </div>
+  </div>
+
+  <div class="settings-btn" onclick="toggleSettings()">⚙️</div>
+
+  <div class="settings-popup" id="settingsPopup">
+    <button class="close-settings" onclick="toggleSettings()">✕</button>
+    <h3>Настройки</h3>
+    <div class="days">
+      <label>Пн <input type="number" id="mon" value="6" min="1" max="12"></label>
+      <label>Вт <input type="number" id="tue" value="6" min="1" max="12"></label>
+      <label>Ср <input type="number" id="wed" value="6" min="1" max="12"></label>
+      <label>Чт <input type="number" id="thu" value="6" min="1" max="12"></label>
+      <label>Пт <input type="number" id="fri" value="6" min="1" max="12"></label>
+      <label>Сб <input type="number" id="sat" value="6" min="1" max="12"></label>
+    </div>
+    <div class="options">
+      <label><input type="checkbox" id="alwaysSnackLunch"> Всегда полдник на обеде</label>
+      <label>URL фонового изображения: <input type="url" id="backgroundImageUrl"
+          placeholder="https://example.com/image.jpg"></label>
+      <label>URL шрифта: <input type="url" id="customFontUrl" placeholder="https://fonts.googleapis.com/..."></label>
+    </div>
+  </div>
+
+  <script>
+    const defaultStudents = [
+      "Агарков Максим", "Алейников Роман", "Анцупова Настя", "Борисов Андрей", "Волков Евгений", "Волков Игорь",
+      "Высочкина Мария", "Горелик Мирослав", "Ищенко Иван", "Протасов Кирилл", "Кличенко Елизавета",
+      "Кличенко Иван", "Лисицын Руслан", "Нерубенко Александр", "Рябикин Дмитрий", "Салакаев Амин",
+      "Сосновский Ярослав", "Чернышов Егор"
+    ];
+    const internatInit = ["Протасов Кирилл", "Высочкина Мария", "Салакаев Амин"];
+
+    function loadData() {
+      try {
+        const data = localStorage.getItem("studentsData");
+        if (data) return JSON.parse(data);
+      } catch (e) {
+        console.error("Ошибка загрузки studentsData:", e);
+        alert("Не удалось загрузить данные студентов. Хранилище переполнено или недоступно.");
+      }
+      return defaultStudents.map(n => ({
+        name: n,
+        present: true,
+        internat: internatInit.includes(n)
+      }));
+    }
+    let students = loadData();
+
+    function loadBackground() {
+      try {
+        const bgUrl = localStorage.getItem("backgroundImageUrl");
+        if (bgUrl) {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.src = bgUrl;
+          img.onload = () => document.body.style.backgroundImage = `url(${bgUrl})`;
+          img.onerror = () => {
+            console.error("Ошибка загрузки фона:", bgUrl);
+            alert("Не удалось загрузить фоновое изображение. Проверьте URL и CORS.");
+          };
+        }
+      } catch (e) {
+        console.error("Ошибка загрузки фона:", e);
+        alert("Не удалось загрузить фоновое изображение.");
+      }
+    }
+
+    function loadCustomFont() {
+      try {
+        const fontUrl = localStorage.getItem("customFontUrl");
+        if (fontUrl) {
+          const link = document.createElement("link");
+          link.href = fontUrl;
+          link.rel = "stylesheet";
+          link.crossOrigin = "anonymous";
+          link.onload = () => document.body.style.fontFamily = 'CustomFont, Inter, sans-serif';
+          link.onerror = () => {
+            console.error("Ошибка загрузки шрифта:", fontUrl);
+            alert("Не удалось загрузить шрифт. Проверьте URL и CORS.");
+          };
+          document.head.appendChild(link);
+        }
+      } catch (e) {
+        console.error("Ошибка загрузки шрифта:", e);
+        alert("Не удалось загрузить шрифт.");
+      }
+    }
+
+    const tbody = document.querySelector("#studentsTable tbody");
+
+    function renderTable() {
+      tbody.innerHTML = "";
+      students.sort((a, b) => a.name.localeCompare(b.name));
+      students.forEach((s, idx) => {
+        const tr = document.createElement("tr");
+        const tdName = document.createElement("td");
+        tdName.textContent = s.internat ? `${s.name} *` : s.name;
+        tdName.className = s.present ? 'present' : 'absent';
+        tdName.dataset.index = idx;
+        tr.appendChild(tdName);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function addStudent() {
+      const inp = document.getElementById("newStudent");
+      const name = inp.value.trim();
+      if (name) {
+        students.push({ name, present: true, internat: false });
+        inp.value = "";
+        saveData();
+        renderTable();
+        updateQR();
+      }
+    }
+
+    function saveData() {
+      try {
+        localStorage.setItem("studentsData", JSON.stringify(students));
+      } catch (e) {
+        console.error("Ошибка сохранения studentsData:", e);
+        alert("Не удалось сохранить данные студентов. Хранилище переполнено.");
+      }
+    }
+
+    function getTodayLessons() {
+      const day = new Date().getDay();
+      const map = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+      const id = map[day];
+      if (!id || !document.getElementById(id)) return 0;
+      return +document.getElementById(id).value;
+    }
+
+    function calcMeals() {
+      const lessons = getTodayLessons();
+      const alwaysSnackLunch = document.getElementById("alwaysSnackLunch").checked;
+      const presentStudents = students.filter(s => s.present);
+      const presentCount = presentStudents.length;
+
+      let second = 0, lunch = 0, snackLunch = 0, snack = 0;
+
+      presentStudents.forEach(s => {
+        if (s.internat) {
+          second++; lunch++; snack++;
+        } else {
+          if (lessons >= 3) second++;
+          if (lessons >= 6) lunch++;
+          if (alwaysSnackLunch) {
+            snackLunch++;
+          } else {
+            if (lessons >= 8) snack++;
+            else if (lessons >= 6) snackLunch++;
+          }
+        }
+      });
+
+      return `11 ИТ ${presentCount}/${students.length}\n` +
+        `Второй завтрак ${second}\n` +
+        `Обед ${lunch} Полдник на обеде ${snackLunch}\n` +
+        `Полдник ${snack}`;
+    }
+
+    function updateQR() {
+      const txt = calcMeals();
+      document.getElementById("qrtext").innerText = txt;
+      new QRious({
+        element: document.getElementById("qrcode"),
+        value: txt,
+        size: 100,
+        level: 'L'
+      });
+    }
+
+    function copyText() {
+      const txt = document.getElementById("qrtext").innerText;
+      navigator.clipboard.writeText(txt);
+    }
+
+    function toggleSettings() {
+      const popup = document.getElementById("settingsPopup");
+      const main = document.querySelector(".main");
+      const qrBox = document.querySelector(".qr-box");
+      const clock = document.querySelector(".clock");
+      popup.classList.toggle("active");
+      main.classList.toggle("blur");
+      qrBox.classList.toggle("blur");
+      clock.classList.toggle("blur");
+    }
+
+    function showContextMenu(e, idx) {
+      e.preventDefault();
+      const existingMenu = document.querySelector(".context-menu");
+      if (existingMenu) existingMenu.remove();
+
+      const menu = document.createElement("div");
+      menu.className = "context-menu";
+      menu.style.left = `${e.pageX}px`;
+      menu.style.top = `${e.pageY}px`;
+
+      const togglePresent = document.createElement("div");
+      togglePresent.textContent = students[idx].present ? "Отметить отсутствующим" : "Отметить присутствующим";
+      togglePresent.onclick = () => {
+        students[idx].present = !students[idx].present;
+        saveData();
+        renderTable();
+        updateQR();
+        menu.remove();
+      };
+
+      const toggleInternat = document.createElement("div");
+      toggleInternat.textContent = students[idx].internat ? "Убрать из интерната" : "Добавить в интернат";
+      toggleInternat.onclick = () => {
+        students[idx].internat = !students[idx].internat;
+        saveData();
+        renderTable();
+        updateQR();
+        menu.remove();
+      };
+
+      const deleteStudent = document.createElement("div");
+      deleteStudent.textContent = "Удалить";
+      deleteStudent.onclick = () => {
+        students.splice(idx, 1);
+        saveData();
+        renderTable();
+        updateQR();
+        menu.remove();
+      };
+
+      menu.append(togglePresent, toggleInternat, deleteStudent);
+      document.body.appendChild(menu);
+
+      document.addEventListener("click", () => menu.remove(), { once: true });
+    }
+
+    document.querySelectorAll(".days input").forEach(inp => inp.onchange = updateQR);
+    document.getElementById("alwaysSnackLunch").onchange = updateQR;
+
+    document.getElementById("backgroundImageUrl").addEventListener("change", (e) => {
+      const url = e.target.value.trim();
+      if (url) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = url;
+        img.onload = () => {
+          document.body.style.backgroundImage = `url(${url})`;
+          try {
+            localStorage.setItem("backgroundImageUrl", url);
+          } catch (e) {
+            console.error("Ошибка сохранения URL фона:", e);
+            alert("Не удалось сохранить URL фона. Хранилище переполнено.");
+          }
+        };
+        img.onerror = () => alert("Не удалось загрузить фоновое изображение. Убедитесь, что URL доступен и поддерживает CORS.");
+      }
+    });
+
+    document.getElementById("customFontUrl").addEventListener("change", (e) => {
+      const url = e.target.value.trim();
+      if (url) {
+        const link = document.createElement("link");
+        link.href = url;
+        link.rel = "stylesheet";
+        link.crossOrigin = "anonymous";
+        link.onload = () => {
+          document.body.style.fontFamily = 'CustomFont, Inter, sans-serif';
+          try {
+            localStorage.setItem("customFontUrl", url);
+          } catch (e) {
+            console.error("Ошибка сохранения URL шрифта:", e);
+            alert("Не удалось сохранить URL шрифта. Хранилище переполнено.");
+          }
+        };
+        link.onerror = () => alert("Не удалось загрузить шрифт. Убедитесь, что URL доступен и поддерживает CORS.");
+        document.head.appendChild(link);
+      }
+    });
+
+    function updateClock() {
+      const now = new Date();
+      const time = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      document.getElementById("clock").textContent = time;
+    }
+
+    window.onload = () => {
+      renderTable();
+      updateQR();
+      loadBackground();
+      loadCustomFont();
+      updateClock();
+      setInterval(updateClock, 1000);
+
+      tbody.addEventListener("contextmenu", (e) => {
+        const idx = e.target.dataset.index;
+        if (idx !== undefined) showContextMenu(e, idx);
+      });
+    };
+
+
+    document.querySelectorAll('.cmd-header').forEach(header => {
+      let isDragging = false, offsetX = 0, offsetY = 0, parent;
+
+      header.addEventListener('mousedown', function (e) {
+        parent = header.parentElement;
+        isDragging = true;
+        offsetX = e.clientX - parent.offsetLeft;
+        offsetY = e.clientY - parent.offsetTop;
+        document.body.style.userSelect = 'none';
+      });
+
+      document.addEventListener('mousemove', function (e) {
+        if (isDragging && parent) {
+          parent.style.position = 'fixed';
+          parent.style.left = (e.clientX - offsetX) + 'px';
+          parent.style.top = (e.clientY - offsetY) + 'px';
+        }
+      });
+
+      document.addEventListener('mouseup', function () {
+        isDragging = false;
+        document.body.style.userSelect = '';
+      });
+    });
+
+    document.querySelectorAll('.cmd-header').forEach(header => {
+      let isDragging = false, offsetX = 0, offsetY = 0, parent, key;
+
+      parent = header.parentElement;
+      key = 'pos_' + (parent.id || parent.className);
+
+      // Восстановить позицию при загрузке
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const { left, top } = JSON.parse(saved);
+        parent.style.position = 'fixed';
+        parent.style.left = left + 'px';
+        parent.style.top = top + 'px';
+      }
+
+      header.addEventListener('mousedown', function (e) {
+        isDragging = true;
+        offsetX = e.clientX - parent.offsetLeft;
+        offsetY = e.clientY - parent.offsetTop;
+        document.body.style.userSelect = 'none';
+      });
+
+      document.addEventListener('mousemove', function (e) {
+        if (isDragging && parent) {
+          parent.style.position = 'fixed';
+          parent.style.left = (e.clientX - offsetX) + 'px';
+          parent.style.top = (e.clientY - offsetY) + 'px';
+        }
+      });
+
+      document.addEventListener('mouseup', function () {
+        if (isDragging && parent) {
+          // Сохраняем позицию
+          localStorage.setItem(key, JSON.stringify({
+            left: parent.offsetLeft,
+            top: parent.offsetTop
+          }));
+        }
+        isDragging = false;
+        document.body.style.userSelect = '';
+      });
+    });
+  </script>
+</body>
+
+</html>
